@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 class FieldUpdatePage extends StatefulWidget {
   final String title;
@@ -13,6 +12,8 @@ class FieldUpdatePage extends StatefulWidget {
 class _FieldUpdatePageState extends State<FieldUpdatePage> {
   final TextEditingController _controller = TextEditingController();
   String fieldValue = '';
+  OverlayEntry? _overlayEntry;
+  bool isValueValid = true;
 
   @override
   void initState() {
@@ -21,11 +22,10 @@ class _FieldUpdatePageState extends State<FieldUpdatePage> {
   }
 
   String? validateInput(String value) {
+    // Logic for validating the TextField input
     if (value.isEmpty) {
       return null;
     }
-
-    // logic for the Textfield input
     int? parsedValue = int.tryParse(value);
     if (parsedValue == null) {
       return 'Please enter a valid numeric value.';
@@ -36,15 +36,70 @@ class _FieldUpdatePageState extends State<FieldUpdatePage> {
     return null;
   }
 
-  // Toast(notification)
-  void showFloatingBar(String message, Color backgroundColor) {
-    Fluttertoast.showToast(
-      msg: message,
-      toastLength: Toast.LENGTH_LONG,
-      gravity: ToastGravity.TOP,
-      backgroundColor: backgroundColor,
-      textColor: Colors.black,
+  // Custom toast notification
+  void showCustomToast(String message, bool isValueValid) {
+    _overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top + 20.0,
+        width: 400.0,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Card(
+            child: Material(
+              elevation: 5,
+              borderRadius: BorderRadius.circular(10),
+              color: Colors.white,
+              child: Container(
+                alignment: Alignment.center,
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 5.0, vertical: 15),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 0, vertical: 10),
+                      child: Icon(
+                        isValueValid
+                            ? Icons.check_circle
+                            : Icons.do_not_disturb_on,
+                        color: isValueValid ? Colors.green : Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        message,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
+
+    Overlay.of(context).insert(_overlayEntry!);
+
+    // giving delay for overlay
+    Future.delayed(const Duration(seconds: 2), () {
+      _overlayEntry?.remove();
+    });
+  }
+
+  // dispose method is ovverride ti remove the overlay entry
+  @override
+  void dispose() {
+    // _overlayEntry?.remove();
+    super.dispose();
   }
 
   @override
@@ -53,11 +108,16 @@ class _FieldUpdatePageState extends State<FieldUpdatePage> {
       appBar: AppBar(
         title: Text(
           '${widget.title}',
+          // It is based on the passed title
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new),
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
         toolbarHeight: 90,
       ),
-
-      // body containes ->Text, Textfield, Button
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -73,7 +133,7 @@ class _FieldUpdatePageState extends State<FieldUpdatePage> {
             const SizedBox(height: 16),
             SizedBox(
               height: 30,
-              child: TextField(
+              child: TextFormField(
                 style: const TextStyle(color: Colors.black),
                 textAlign: TextAlign.left,
                 controller: _controller,
@@ -84,17 +144,20 @@ class _FieldUpdatePageState extends State<FieldUpdatePage> {
                 },
                 decoration: const InputDecoration(
                   focusedBorder:
-                      OutlineInputBorder(borderSide: BorderSide(width: 2.0)),
+                      OutlineInputBorder(borderSide: BorderSide(width: 0.0)),
                   border: OutlineInputBorder(),
                 ),
               ),
             ),
-            // showing error at the bottom of the textfield
+            // Displaying error message below the TextField
             validateInput(_controller.text) == null
                 ? const SizedBox(height: 0)
-                : const Text(
-                    'Advertisement Interval must be betweeen 100 to 3000ms',
-                    style: TextStyle(color: Colors.red),
+                : const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 0, vertical: 7),
+                    child: Text(
+                      'Advertisement Interval must be between 100 and 3000ms',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   ),
             const SizedBox(height: 8),
             TextButton(
@@ -106,21 +169,29 @@ class _FieldUpdatePageState extends State<FieldUpdatePage> {
                   borderRadius: BorderRadius.circular(1),
                 ),
               ),
-              // On pressed property for the button
               onPressed: () {
-                if (validateInput(_controller.text) == null) {
+                if (_controller.text.isEmpty) {
+                  setState(() {
+                    isValueValid = false;
+                  });
+                  showCustomToast("Advertisement Interval Update Failed    ✖️",
+                      isValueValid);
+                } else if (validateInput(_controller.text) == null) {
                   setState(() {
                     fieldValue = '';
                     _controller.clear();
+                    isValueValid = true; // Set to true when successful
                   });
-                  showFloatingBar(
-                      "Advertizement Interval Updated", Colors.white);
+                  showCustomToast(
+                      "Advertisement Interval Updated     ✖️", isValueValid);
                 } else {
-                  showFloatingBar(
-                      'Advertizement Interval Updated Failed', Colors.red);
+                  setState(() {
+                    isValueValid = false; // Set to false when there's an error
+                  });
+                  showCustomToast("Advertisement Interval Update Failed    ✖️",
+                      isValueValid);
                 }
 
-                // This is used to go back to previous page show notification there
                 Navigator.pop(context);
               },
               child: const Text(
@@ -134,3 +205,7 @@ class _FieldUpdatePageState extends State<FieldUpdatePage> {
     );
   }
 }
+//----------------------------------
+
+
+

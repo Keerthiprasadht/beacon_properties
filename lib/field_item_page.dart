@@ -9,19 +9,19 @@ class FieldItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
-        child: ListTile(
-          title: Text(title),
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => FieldUpdatePage(title: title),
-              ),
-            );
-          },
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+      child: ListTile(
+        title: Text(title),
+        trailing: const Icon(Icons.arrow_forward_ios),
+        onTap: () {
+          // based on the title it will navigates
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => FieldUpdatePage(title: title),
+            ),
+          );
+        },
       ),
     );
   }
